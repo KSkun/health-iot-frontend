@@ -4,37 +4,38 @@ import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
-import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
+import PersonAddAlt1OutlinedIcon from '@mui/icons-material/PersonAddAlt1Outlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import {createTheme, ThemeProvider} from '@mui/material/styles';
-import SnackbarAlert from "../components/SnackbarAlert";
+import SnackbarAlert from '../components/SnackbarAlert';
 
 import axios from "axios";
 import {apiUrlPrefix} from "../config";
 import {getErrorMessage} from "../utils/errorHandler";
-import {Link} from "react-router-dom";
+import delay from "../utils/delay";
+import {useNavigate, Link} from "react-router-dom";
 
 const theme = createTheme();
 
-export default function Login() {
+export default function Register() {
+    let navigate = useNavigate();
     const [error, setError] = useState(false);
     const [message, setMessage] = useState('');
     const [severity, setSeverity] = useState('error');
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        axios.get(apiUrlPrefix + '/user/token', {
-            params: {
-                name: data.get('name'),
-                password: data.get('password')
-            }
+        axios.post(apiUrlPrefix + '/user', {
+            name: data.get('name'),
+            password: data.get('password')
         }).then(response => {
             console.log(response.data.data);
             setSeverity('success');
-            setMessage('已登录');
+            setMessage('注册成功，即将跳转到登录页');
             setError(true);
+            delay(1000).then(() => navigate('/login'));
         }).catch(error => {
             setSeverity('error');
             setMessage(getErrorMessage(error));
@@ -48,15 +49,15 @@ export default function Login() {
             <Container component="main" maxWidth="xs">
                 <CssBaseline/>
                 <Box sx={{marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center',}}>
-                    <Avatar sx={{m: 1, bgcolor: 'secondary.main'}}><LoginOutlinedIcon/></Avatar>
-                    <Typography component="h1" variant="h5">登录</Typography>
+                    <Avatar sx={{m: 1, bgcolor: 'secondary.main'}}><PersonAddAlt1OutlinedIcon/></Avatar>
+                    <Typography component="h1" variant="h5">注册</Typography>
                     <Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1}}>
                         <TextField margin="normal" required fullWidth id="name" label="用户名" name="name"
                                    autoComplete="name" autoFocus/>
                         <TextField margin="normal" required fullWidth name="password" label="密码" type="password"
                                    id="password" autoComplete="current-password"/>
-                        <Button type="submit" fullWidth variant="contained" sx={{mt: 3, mb: 2}}>登录</Button>
-                        <Link to="/register">还没有用户？前往注册</Link>
+                        <Button type="submit" fullWidth variant="contained" sx={{mt: 3, mb: 2}}>注册</Button>
+                        <Link to="/login">已经注册了？前往登录</Link>
                     </Box>
                 </Box>
                 {error ? <SnackbarAlert message={message} severity={severity}/> : ''}
