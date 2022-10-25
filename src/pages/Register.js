@@ -9,12 +9,14 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import {createTheme, ThemeProvider} from '@mui/material/styles';
 import SnackbarAlert from '../components/SnackbarAlert';
+import Copyright from "../components/Copyright";
+import {Link} from "react-router-dom";
 
 import axios from "axios";
 import {apiUrlPrefix} from "../config";
 import {getErrorMessage} from "../utils/errorHandler";
 import delay from "../utils/delay";
-import {useNavigate, Link} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 
 const theme = createTheme();
 
@@ -61,6 +63,7 @@ export default function Register() {
                     </Box>
                 </Box>
                 {error ? <SnackbarAlert message={message} severity={severity}/> : ''}
+                <Copyright sx={{ mt: 8, mb: 4 }} />
             </Container>
         </ThemeProvider>
     );
