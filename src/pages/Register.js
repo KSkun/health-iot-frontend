@@ -28,10 +28,10 @@ export default function Register() {
 
     useEffect(() => {
         let tokenExpire = localStorage.getItem('token_expire');
-        if (Date.now() < tokenExpire * 1000) {
+        if (Date.now() < tokenExpire) {
             navigate('/dashboard');
         }
-    });
+    }, [navigate]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();

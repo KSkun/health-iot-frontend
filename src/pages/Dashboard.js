@@ -82,48 +82,34 @@ function DashboardContent() {
     const [message, setMessage] = useState('');
     const [severity, setSeverity] = useState('error');
 
-    const [deviceGridContent, setDeviceGridContent] = useState(null);
+    const [devices, setDevices] = useState([]);
 
     useEffect(() => {
         let tokenExpire = localStorage.getItem('token_expire');
-        if (tokenExpire == null || Date.now() >= tokenExpire * 1000) {
+        if (tokenExpire == null || Date.now() >= tokenExpire) {
             localStorage.removeItem('token');
             localStorage.removeItem('token_expire');
             navigate('/login');
         }
-
         let token = localStorage.getItem('token');
-        axios.get(apiUrlPrefix + '/device/list', {
-            headers: {'Authorization': 'Bearer ' + token}
-        }).then(response => {
-            let devices = response.data.data.devices;
-            setDeviceGridContent(devices.map(d => (
-                <Grid item sm={3}>
-                    <Link to={'/device/' + d.id} style={{textDecoration: 'none'}}>
-                        <Paper sx={{p: 2, display: 'flex', flexDirection: 'column'}}>
-                            <Title>{d.name}</Title>
-                            <Typography sx={{flex: 1}} variant='caption'>S/N: {d.serial}</Typography>
-                            <WatchIcon fontSize='large'/>
-                            <Typography sx={{flex: 1}}>
-                            <span style={{color: d.online ? 'green' : 'gray'}}>
-                                {d.online ? '在线' : '离线'}
-                            </span>
-                                &nbsp;&nbsp;
-                                <span style={{color: d.warning ? 'red' : 'green'}}>
-                                &#9679;&nbsp;{d.warning ? '警告' : '正常'}
-                            </span>
-                            </Typography>
-                            <Typography sx={{flex: 1}}>电量：{d.battery}%</Typography>
-                        </Paper>
-                    </Link>
-                </Grid>
-            )));
-        }).catch(error => {
-            setSeverity('error');
-            setMessage(getErrorMessage(error));
-            setError(true);
-        });
-    });
+
+        function refreshDeviceList() {
+            if (token == null) return;
+            axios.get(apiUrlPrefix + '/device/list', {
+                headers: {'Authorization': 'Bearer ' + token}
+            }).then(response => {
+                setDevices(response.data.data.devices);
+            }).catch(error => {
+                setSeverity('error');
+                setMessage(getErrorMessage(error));
+                setError(true);
+            });
+        }
+
+        refreshDeviceList();
+        let interval = setInterval(refreshDeviceList, 5000);
+        return () => clearInterval(interval);
+    }, [navigate]);
 
     return (
         <ThemeProvider theme={mdTheme}>
@@ -160,7 +146,27 @@ function DashboardContent() {
                     <Toolbar/>
                     <Container maxWidth="lg" sx={{mt: 4, mb: 4}}>
                         <Grid container spacing={3}>
-                            {deviceGridContent}
+                            {devices.map(d => (
+                                <Grid item sm={3}>
+                                    <Link to={'/device/' + d.id} style={{textDecoration: 'none'}}>
+                                        <Paper sx={{p: 2, display: 'flex', flexDirection: 'column'}}>
+                                            <Title>{d.name}</Title>
+                                            <Typography sx={{flex: 1}} variant='caption'>S/N: {d.serial}</Typography>
+                                            <WatchIcon fontSize='large'/>
+                                            <Typography sx={{flex: 1}}>
+                                                <span style={{color: d.online ? 'green' : 'gray'}}>
+                                                    {d.online ? '在线' : '离线'}
+                                                </span>
+                                                &nbsp;&nbsp;
+                                                <span style={{color: d.warning ? 'red' : 'green'}}>
+                                                    &#9679;&nbsp;{d.warning ? '警告' : '正常'}
+                                                </span>
+                                            </Typography>
+                                            <Typography sx={{flex: 1}}>电量：{d.battery}%</Typography>
+                                        </Paper>
+                                    </Link>
+                                </Grid>
+                            ))}
                         </Grid>
                         <Copyright sx={{pt: 4}}/>
                     </Container>
