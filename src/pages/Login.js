@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -10,18 +10,27 @@ import Container from '@mui/material/Container';
 import {createTheme, ThemeProvider} from '@mui/material/styles';
 import SnackbarAlert from "../components/SnackbarAlert";
 import Copyright from "../components/Copyright";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 
 import axios from "axios";
 import {apiUrlPrefix} from "../config";
 import {getErrorMessage} from "../utils/errorHandler";
+import delay from "../utils/delay";
 
 const theme = createTheme();
 
 export default function Login() {
+    let navigate = useNavigate();
     const [error, setError] = useState(false);
     const [message, setMessage] = useState('');
     const [severity, setSeverity] = useState('error');
+
+    useEffect(() => {
+        let tokenExpire = localStorage.getItem('token_expire');
+        if (Date.now() < tokenExpire * 1000) {
+            navigate('/dashboard');
+        }
+    });
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -32,10 +41,12 @@ export default function Login() {
                 password: data.get('password')
             }
         }).then(response => {
-            console.log(response.data.data);
+            localStorage.setItem('token', response.data.data.token);
+            localStorage.setItem('token_expire', response.data.data.expire_time);
             setSeverity('success');
-            setMessage('已登录');
+            setMessage('已登录，即将跳转至主页');
             setError(true);
+            delay(1000).then(() => navigate('/dashboard'));
         }).catch(error => {
             setSeverity('error');
             setMessage(getErrorMessage(error));

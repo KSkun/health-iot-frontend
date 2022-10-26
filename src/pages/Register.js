@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -25,6 +25,13 @@ export default function Register() {
     const [error, setError] = useState(false);
     const [message, setMessage] = useState('');
     const [severity, setSeverity] = useState('error');
+
+    useEffect(() => {
+        let tokenExpire = localStorage.getItem('token_expire');
+        if (Date.now() < tokenExpire * 1000) {
+            navigate('/dashboard');
+        }
+    });
 
     const handleSubmit = async (event) => {
         event.preventDefault();
