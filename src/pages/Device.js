@@ -17,13 +17,12 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import {mainListItems} from '../components/listItems';
 import Copyright from "../components/Copyright";
 import {useEffect, useState} from "react";
-import {Link, useNavigate} from "react-router-dom";
-import WatchIcon from '@mui/icons-material/Watch';
+import {useNavigate, useParams} from "react-router-dom";
 
 import axios from 'axios';
 import SnackbarAlert from "../components/SnackbarAlert";
 import {getErrorMessage} from "../utils/errorHandler";
-import {apiUrlPrefix} from "../config";
+import {amapAccessKey, apiUrlPrefix} from "../config";
 import Title from "../components/Title";
 
 const drawerWidth = 240;
@@ -74,7 +73,8 @@ const Drawer = styled(MuiDrawer, {shouldForwardProp: (prop) => prop !== 'open'})
 
 const mdTheme = createTheme();
 
-function DashboardContent() {
+function DeviceContent() {
+    let {deviceID} = useParams();
     let navigate = useNavigate();
     const [open, setOpen] = React.useState(true);
     const toggleDrawer = () => setOpen(!open);
@@ -82,7 +82,7 @@ function DashboardContent() {
     const [message, setMessage] = useState('');
     const [severity, setSeverity] = useState('error');
 
-    const [devices, setDevices] = useState([]);
+    const [deviceInfo, setDeviceInfo] = useState(null);
 
     useEffect(() => {
         let tokenExpire = localStorage.getItem('token_expire');
@@ -93,11 +93,11 @@ function DashboardContent() {
         }
         let token = localStorage.getItem('token');
 
-        function refreshDeviceList() {
-            axios.get(apiUrlPrefix + '/device/list', {
+        function refreshDevice() {
+            axios.get(apiUrlPrefix + '/device/' + deviceID, {
                 headers: {'Authorization': 'Bearer ' + token}
             }).then(response => {
-                setDevices(response.data.data.devices);
+                setDeviceInfo(response.data.data);
             }).catch(error => {
                 setSeverity('error');
                 setMessage(getErrorMessage(error));
@@ -105,10 +105,79 @@ function DashboardContent() {
             });
         }
 
-        refreshDeviceList();
-        let interval = setInterval(refreshDeviceList, 5000);
+        refreshDevice();
+        let interval = setInterval(refreshDevice, 20000);
         return () => clearInterval(interval);
-    }, [navigate]);
+    }, [deviceID, navigate]);
+
+    function DeviceInfoGrid() {
+        return (
+            <Grid container spacing={3}>
+                <Grid item sm={6}>
+                    <Paper sx={{p: 2, display: 'flex', flexDirection: 'column', height: 500}}>
+                        <Title>{deviceInfo.device.name}</Title>
+                        <Typography variant='caption'>
+                            序列号：{deviceInfo.device.serial}
+                        </Typography>
+                        <Divider/>
+                        <Typography variant='h6'>设备状态</Typography>
+                        <Typography>
+                                        <span style={{color: deviceInfo.online ? 'green' : 'gray'}}>
+                                            {deviceInfo.online ? '在线' : '离线'}
+                                        </span>
+                            &nbsp;&nbsp;
+                            电量{deviceInfo.device.status.battery}%
+                            &nbsp;&nbsp;
+                            <span style={{color: deviceInfo.device.status.locating ? 'green' : 'red'}}>
+                                            {deviceInfo.device.status.locating ? '定位正常' : '定位异常'}
+                                        </span>
+                            &nbsp;&nbsp;&nbsp;
+                            <span style={{color: deviceInfo.device.status.wearing ? 'green' : 'red'}}>
+                                            {deviceInfo.device.status.wearing ? '穿戴正常' : '穿戴异常'}
+                                        </span>
+                        </Typography>
+                        <Typography>
+                            心率：{deviceInfo.device.sensor.heart_rate}次/分钟
+                        </Typography>
+                        <Typography>
+                            血氧饱和度：{deviceInfo.device.sensor.blood_oxygen}%
+                        </Typography>
+                        <Typography>
+                            求救：{deviceInfo.device.sensor.sos_warning ? '是' : '否'}
+                        </Typography>
+                        <Typography>
+                            跌倒：{deviceInfo.device.sensor.fall_warning ? '是' : '否'}
+                        </Typography>
+                        <Typography>最后更新时间：{new Intl.DateTimeFormat('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        }).format(deviceInfo.device.last_report_time)}</Typography>
+                        <Divider/>
+                        <Typography variant='h6'>当前警告</Typography>
+                        {deviceInfo.warnings.map(w => (
+                            <Typography>{w.field}：{w.message}</Typography>
+                        ))}
+                    </Paper>
+                </Grid>
+                <Grid item sm={6}>
+                    <Paper sx={{p: 2, display: 'flex', flexDirection: 'column', height: 500}}>
+                        <Title>定位</Title>
+                        <iframe style={{height: '100%'}} title='amap_iframe' src={'https://m.amap.com/navi/?dest='
+                            + deviceInfo.device.sensor.longitude + ','
+                            + deviceInfo.device.sensor.latitude
+                            + '&destName='
+                            + deviceInfo.device.name
+                            + '&hideRouteIcon=1&key='
+                            + amapAccessKey}/>
+                    </Paper>
+                </Grid>
+            </Grid>
+        );
+    }
 
     return (
         <ThemeProvider theme={mdTheme}>
@@ -144,29 +213,8 @@ function DashboardContent() {
                      }}>
                     <Toolbar/>
                     <Container maxWidth="lg" sx={{mt: 4, mb: 4}}>
-                        <Grid container spacing={3}>
-                            {devices.map(d => (
-                                <Grid item sm={3}>
-                                    <Link to={'/device/' + d.id} style={{textDecoration: 'none'}}>
-                                        <Paper sx={{p: 2, display: 'flex', flexDirection: 'column'}}>
-                                            <Title>{d.name}</Title>
-                                            <Typography sx={{flex: 1}} variant='caption'>S/N: {d.serial}</Typography>
-                                            <WatchIcon fontSize='large'/>
-                                            <Typography sx={{flex: 1}}>
-                                                <span style={{color: d.online ? 'green' : 'gray'}}>
-                                                    {d.online ? '在线' : '离线'}
-                                                </span>
-                                                &nbsp;&nbsp;
-                                                <span style={{color: d.warning ? 'red' : 'green'}}>
-                                                    &#9679;&nbsp;{d.warning ? '警告' : '正常'}
-                                                </span>
-                                            </Typography>
-                                            <Typography sx={{flex: 1}}>电量：{d.battery}%</Typography>
-                                        </Paper>
-                                    </Link>
-                                </Grid>
-                            ))}
-                        </Grid>
+                        {deviceInfo != null ? <DeviceInfoGrid/> : ''}
+
                         <Copyright sx={{pt: 4}}/>
                     </Container>
                 </Box>
@@ -176,6 +224,6 @@ function DashboardContent() {
     );
 }
 
-export default function Dashboard() {
-    return <DashboardContent/>;
+export default function Device() {
+    return <DeviceContent/>;
 }
