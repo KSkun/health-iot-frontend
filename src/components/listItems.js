@@ -15,7 +15,7 @@ export const mainListItems = (
                 <ListItemText primary="设备"/>
             </ListItemButton>
         </Link>
-        <Link to='/report' style={{textDecoration: 'none', color: 'inherit'}}>
+        <Link to='/data' style={{textDecoration: 'none', color: 'inherit'}}>
             <ListItemButton>
                 <ListItemIcon><DatasetIcon/></ListItemIcon>
                 <ListItemText primary="数据"/>

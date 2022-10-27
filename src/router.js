@@ -5,13 +5,15 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Device from "./pages/Device";
+import Data from "./pages/Data";
 
 const router = createBrowserRouter([
     {path: '/', element: <App/>},
     {path: '/login', element: <Login/>},
     {path: '/register', element: <Register/>},
     {path: '/dashboard', element: <Dashboard/>},
-    {path: '/device/:deviceID', element: <Device/>}
+    {path: '/device/:deviceID', element: <Device/>},
+    {path: '/data', element: <Data/>}
 ]);
 
 export default router;
