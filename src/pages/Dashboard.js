@@ -25,6 +25,9 @@ import SnackbarAlert from "../components/SnackbarAlert";
 import {getErrorMessage} from "../utils/errorHandler";
 import {apiUrlPrefix} from "../config";
 import Title from "../components/Title";
+import Button from "@mui/material/Button";
+import {Dialog, DialogTitle} from "@mui/material";
+import TextField from "@mui/material/TextField";
 
 const drawerWidth = 240;
 
@@ -83,6 +86,7 @@ function DashboardContent() {
     const [severity, setSeverity] = useState('error');
 
     const [devices, setDevices] = useState([]);
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     useEffect(() => {
         let tokenExpire = localStorage.getItem('token_expire');
@@ -93,7 +97,7 @@ function DashboardContent() {
         }
         let token = localStorage.getItem('token');
 
-        function refreshDeviceList() {
+        function _refreshDeviceList() {
             axios.get(apiUrlPrefix + '/device/list', {
                 headers: {'Authorization': 'Bearer ' + token}
             }).then(response => {
@@ -105,10 +109,64 @@ function DashboardContent() {
             });
         }
 
-        refreshDeviceList();
-        let interval = setInterval(refreshDeviceList, 5000);
+        _refreshDeviceList();
+        let interval = setInterval(_refreshDeviceList, 20000);
         return () => clearInterval(interval);
     }, [navigate]);
+
+    function handleOpenDialog() {
+        setDialogOpen(true);
+    }
+
+    function AddDeviceDialog() {
+        function handleClose() {
+            setDialogOpen(false);
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            let token = localStorage.getItem('token');
+            axios.post(apiUrlPrefix + '/device', {
+                name: data.get('name'),
+                serial: data.get('serial')
+            }, {
+                headers: {'Authorization': 'Bearer ' + token}
+            }).then(() => {
+                setSeverity('success');
+                setMessage('设备已添加');
+                setError(true);
+                axios.get(apiUrlPrefix + '/device/list', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                }).then(response => {
+                    setDevices(response.data.data.devices);
+                }).catch(error => {
+                    setSeverity('error');
+                    setMessage(getErrorMessage(error));
+                    setError(true);
+                });
+                setDialogOpen(false);
+            }).catch(error => {
+                setSeverity('error');
+                setMessage(getErrorMessage(error));
+                setError(true);
+            });
+            setError(false);
+        }
+
+        return (
+            <Dialog onClose={handleClose} open={dialogOpen}>
+                <DialogTitle>添加设备</DialogTitle>
+                <Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1, p: 5}}>
+                    <TextField margin="normal" required fullWidth id="name" label="设备名称" name="name"
+                               autoComplete="name" autoFocus/>
+                    <TextField margin="normal" required fullWidth id="serial" label="序列号" name="serial"
+                               autoComplete="serial" autoFocus/>
+                    <Button type="submit" fullWidth variant="contained" sx={{mt: 3, mb: 2}}>提交</Button>
+                </Box>
+            </Dialog>
+        );
+    }
 
     return (
         <ThemeProvider theme={mdTheme}>
@@ -145,6 +203,11 @@ function DashboardContent() {
                     <Toolbar/>
                     <Container maxWidth="lg" sx={{mt: 4, mb: 4}}>
                         <Grid container spacing={3}>
+                            <Grid item sm={12}>
+                                <Paper sx={{p: 2}}>
+                                    <Button variant="contained" onClick={handleOpenDialog}>添加设备</Button>
+                                </Paper>
+                            </Grid>
                             {devices.map(d => (
                                 <Grid item sm={3}>
                                     <Link to={'/device/' + d.id} style={{textDecoration: 'none'}}>
@@ -171,6 +234,7 @@ function DashboardContent() {
                     </Container>
                 </Box>
                 {error ? <SnackbarAlert message={message} severity={severity}/> : ''}
+                <AddDeviceDialog/>
             </Box>
         </ThemeProvider>
     );

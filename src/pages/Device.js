@@ -214,7 +214,6 @@ function DeviceContent() {
                     <Toolbar/>
                     <Container maxWidth="lg" sx={{mt: 4, mb: 4}}>
                         {deviceInfo != null ? <DeviceInfoGrid/> : ''}
-
                         <Copyright sx={{pt: 4}}/>
                     </Container>
                 </Box>
